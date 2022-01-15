@@ -1,0 +1,182 @@
+*qfloc_edit.txt*                            Editing quickfix and location lists
+
+Author:   Thore Weilbier <thore@weilbier.net>
+License:  MIT
+
+==============================================================================
+                                                *qfloc_edit_table_of_contents*
+TABLE OF CONTENTS~
+
+Introduction ....................................... |qfloc_edit_introduction|
+Usage ..................................................... |qfloc_edit_usage|
+Commands ............................................... |qfloc_edit_commands|
+Variables ............................................. |qfloc_edit_variables|
+
+
+==============================================================================
+                                                     *qfloc_edit_introduction*
+INTRODUCTION~
+
+This is a minimal plugin that allows to edit quickfix or location lists. The so
+far supported actions are to remove an entry from a list and undo such
+a removal again.
+
+This functionality is especially useful for use-cases where the quickfix list
+acts like a TODO list (in any format). When being finished with an entry it
+can be simply removed. When an entry got removed mistakenly or too early, it
+can be simply recovered.
+
+All actions to edit quickfix or location lists intentionally always replace
+the current list. This is to keep the history of the lists clean and don't
+clutter it with a new list for each edit action.
+
+==============================================================================
+                                                            *qfloc_edit_usage*
+USAGE~
+
+The plugin works out of the box. It automatically defines mappings on quickfix
+or location list buffers that follow Vim standards. When being in the window
+with such a buffer, hit `dd` to remove the entry under the cursor. Type `u` at
+any location within the window to iteratively undo the last remove actions.
+
+If the automatic mappings are not wanted, they can be simply disabled.
+Checkout |g:qfloc_edit_disable_mappings| how to do so.
+
+For more flexibility to remove entries independent from the window and cursor
+location, please checkout the |qfloc_edit_commands|.
+
+
+Example:~
+
+If you want to define your own mappings, it makes the most sense to define
+them only for buffers with the `qf` filetype. Therefore an `after/ftplugin` is
+the perfect match. Just create a file with the relative path
+`after/ftplugin/qf.vim` somewhere in your package path and insert something
+like the following: >
+
+  if !exists('b:undo_ftplugin')
+    let b:undo_ftplugin = ''
+  endif
+
+  nnoremap <buffer> dd <cmd>RemoveEntryUnderCursorInCurrentListWindow<CR>
+  let b:undo_ftplugin .= '| nunmap <buffer> dd'
+
+  nnoremap <buffer> u <cmd>UndoLastEntryRemovalInCurrentListWindow<CR>
+  let b:undo_ftplugin .= '| nunmap <buffer> u'
+
+
+==============================================================================
+                                                         *qfloc_edit_commands*
+COMMANDS~
+
+                                                        *:RemoveQuickfixEntry*
+
+|:RemoveQuickfixEntry| {index}
+
+  Remove the entry at [index] in the current quickfix list.
+
+
+                                             *:RemoveQuickfixEntryUnderCursor*
+
+|:RemoveQuickfixEntryUnderCursor|
+
+  Remove the entry in the current quickfix list according to the current
+  cursor position. This command is quite dump. It will not check if the cursor
+  is actually within the quickfix buffer or not.
+
+
+                                               *:UndoLastQuickfixEntryRemoval*
+
+|:UndoLastQuickfixEntryRemoval||
+
+  Inserts back the last entry of the quickfix entry that has been removed.
+  Does nothing if nothing got removed yet. The remove history gets reset if
+  a new quickfix list got created. The history is not preserved over |:colder|
+  and |:cnewer| commands.
+
+
+                                                        *:RemoveLocationEntry*
+
+|:RemoveLocationEntry| {index} {window_number}
+
+  Like |:RemoveQuickfixEntry| but for the location list for the window
+  specified by [window_number].
+
+
+                                             *:RemoveLocationEntryUnderCursor*
+
+|:RemoveLocationEntryUnderCursor|
+
+  Like |:RemoveQuickfixEntryUnderCursor| but for the location list of the
+  currently active window (same for the location list window itself).
+
+
+                                               *:UndoLastQuickfixEntryRemoval*
+
+|:UndoLastLocationEntryRemoval| {window_number}
+
+  Like |:UndoLastQuickfixEntryRemoval| but for the location list for the
+  window specified by [window_number]. The same rules for the history of
+  a location list apply here for the scope of a specific window.
+
+
+                                *:UndoLastLocationEntryRemovalInCurrentWindow*
+
+|:UndoLastLocationEntryRemovalInCurrentWindow| {window_number}
+
+  Like |:UndoLastQuickfixEntryRemoval| but for the location list of the
+  currently active window (same for the location list window itself).
+
+
+                                              *RemoveEntryInCurrentListWindow*
+
+|:RemoveEntryInCurrentListWindow| {index}
+
+  Combines |:RemoveQuickfixEntry| and |:RemoveLocationEntry| into a single
+  command depending on the active buffer. In contrast to the child commands,
+  it will do nothing if the current buffer is not a list buffer. This also
+  means that it will always act on the list associated with this buffer,
+  especially in case of a location list.
+
+
+                                   *RemoveEntryUnderCursorInCurrentListWindow*
+
+|:RemoveEntryUnderCursorInCurrentListWindow|
+
+  Combines |:RemoveQuickfixEntryUnderCursor| and
+  |:RemoveLocationEntryUnderCursor| into a single command depending on the
+  active buffer. In contrast to the child commands, it will do nothing if the
+  current buffer is not a list buffer. This also means that it will always act
+  on the list associated with this buffer, especially in case of a location
+  list.
+
+
+                                    *UndoLastEntryRemovalInCurrentListWindow*
+
+|:UndoLastEntryRemovalInCurrentListWindow|
+
+  Combines |:UndoLastQuickfixEntryRemoval| and
+  |:UndoLastLocationEntryRemovalInCurrentWindow| into a single command
+  depending on the active buffer. In contrast to the child commands, it will
+  do nothing if the current buffer is not a list buffer. This also means that
+  it will always act on the list associated with this buffer, especially in
+  case of a location list.
+
+
+==============================================================================
+                                                          *qfloc_edit_variables*
+VARIABLES~
+
+The following variables can be set to customize the behavior of this plugin.
+
+|g:qfloc_edit_disable_mappings|                   boolean (default: `v:false`)
+
+  Disables the automatic setting of the mappings for quickfix and location
+  list buffers. Set this if you want to use other mappings (you can also just
+  add new ones in parallel) or want to take advantage of even better lazy
+  loading (the plugin is mostly lazy already).
+
+
+==============================================================================
+
+vim:tw=78:ts=8:noet:ft=help:norl:
